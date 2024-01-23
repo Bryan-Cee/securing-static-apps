@@ -1,5 +1,9 @@
 var express = require('express');
 var BlobServiceClient = require('@azure/storage-blob').BlobServiceClient;
+var StorageSharedKeyCredential =
+  require('@azure/storage-blob').StorageSharedKeyCredential;
+const DefaultAzureCredential =
+  require('@azure/identity').DefaultAzureCredential;
 var router = express.Router();
 
 require('dotenv').config({ path: '.env' });
@@ -18,12 +22,17 @@ router.get('/store/:blobName', async (req, res) => {
   const accountKey = process.env.STORAGE_ACCOUNT_KEY;
   const containerName = process.env.CONTAINER_NAME;
   const privateEndpointIP = process.env.PRIVATE_ENDPOINT_IP;
-
-  // Create a BlobServiceClient to interact with the Blob service
-  const blobServiceClient = new BlobServiceClient(
-    `https://${accountName}.blob.core.windows.net?${accountKey}`
+  const sharedKeyCredential = new StorageSharedKeyCredential(
+    accountName,
+    accountKey
   );
 
+  const blobServiceClient = new BlobServiceClient(
+    `https://${accountName}.blob.core.windows.net`,
+    sharedKeyCredential
+  );
+
+  console.log(blobServiceClient);
   // Function to get blob content
   async function getBlobContent(blobName) {
     const containerClient = blobServiceClient.getContainerClient(containerName);
