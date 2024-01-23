@@ -1,89 +1,39 @@
-require('dotenv').config({ path: '.env' });
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
 
-const express = require('express');
-const { BlobServiceClient } = require('@azure/storage-blob');
+var indexRouter = require('./routes/index');
 
-const app = express();
-const port = 3000;
+var app = express();
 
-// Replace these values with your storage account and private endpoint details
-const accountName = process.env.STORAGE_ACCOUNT_NAME;
-const accountKey = process.env.STORAGE_ACCOUNT_KEY;
-const containerName = process.env.CONTAINER_NAME;
-const privateEndpointIP = process.env.PRIVATE_ENDPOINT_IP;
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
 
-// Create a BlobServiceClient to interact with the Blob service
-const blobServiceClient = new BlobServiceClient(
-  `https://${privateEndpointIP}?${accountKey}`
-);
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Function to get blob content
-async function getBlobContent(blobName) {
-  const containerClient = blobServiceClient.getContainerClient(containerName);
-  const blobClient = containerClient.getBlobClient(blobName);
+app.use('/', indexRouter);
 
-  const response = await blobClient.download();
-  return await streamToBuffer(response.readableStreamBody);
-}
-
-// Function to convert stream to buffer
-async function streamToBuffer(readableStream) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    readableStream.on('data', (data) => {
-      chunks.push(data instanceof Buffer ? data : Buffer.from(data));
-    });
-    readableStream.on('end', () => {
-      resolve(Buffer.concat(chunks));
-    });
-    readableStream.on('error', reject);
-  });
-}
-
-// Define route to fetch and display blob content
-app.get('/:blobName', async (req, res) => {
-  const blobName = req.params.blobName;
-  console.log(blobName);
-
-  try {
-    const content = await getBlobContent(blobName);
-    res.send(`<div style="border: 1px solid; font-weight: bolder;
-	padding: 15px 10px 15px 1.5em;
-	background-repeat: no-repeat;
-	background-position: 10px center;
-	max-width: 460px;
-	color: #D8000C;
-	background-color: #FFBABA;
-	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob --> ${blobName}: </div>\n
-  ${content.toString()}`);
-  } catch (error) {
-    res.status(500).send(
-      `<div style="border: 1px solid; font-weight: bolder;
-	padding: 15px 10px 15px 1.5em;
-	background-repeat: no-repeat;
-	background-position: 10px center;
-	max-width: 460px;
-	color: #D8000C;
-	background-color: #FFBABA;
-	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob --> ${blobName}: </div><div><pre style="background: #f4f4f4;
-    border: 1px solid #ddd;
-    border-left: 3px solid #f36d33;
-    color: #666;
-    page-break-inside: avoid;
-    font-family: monospace;
-    font-size: 15px;
-    line-height: 1.6;
-    margin-bottom: 1.6em;
-    max-width: 100%;
-    overflow: auto;
-    padding: 1em 1.5em;
-    display: block;
-    word-wrap: break-word;"><code>${error.message}</code></pre></div>`
-    );
-  }
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404));
 });
 
-// Start the Express server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
 });
+
+module.exports = app;
