@@ -8,12 +8,13 @@ const port = 3000;
 
 // Replace these values with your storage account and private endpoint details
 const accountName = process.env.STORAGE_ACCOUNT_NAME;
-const accountKey = process.env.ACCOUNT_KEY;
+const accountKey = process.env.STORAGE_ACCOUNT_KEY;
 const containerName = process.env.CONTAINER_NAME;
+const privateEndpointIP = process.env.PRIVATE_ENDPOINT_IP;
 
 // Create a BlobServiceClient to interact with the Blob service
 const blobServiceClient = new BlobServiceClient(
-  `https://${accountName}.blob.core.windows.net?${accountKey}`
+  `https://${privateEndpointIP}?${accountKey}`
 );
 
 // Function to get blob content
@@ -46,9 +47,16 @@ app.get('/:blobName', async (req, res) => {
 
   try {
     const content = await getBlobContent(blobName);
-    res.send(content.toString());
+    res.send(`<div style="border: 1px solid; font-weight: bolder;
+	padding: 15px 10px 15px 1.5em;
+	background-repeat: no-repeat;
+	background-position: 10px center;
+	max-width: 460px;
+	color: #D8000C;
+	background-color: #FFBABA;
+	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob --> ${blobName}: </div>\n
+  ${content.toString()}`);
   } catch (error) {
-    console.log(error);
     res.status(500).send(
       `<div style="border: 1px solid; font-weight: bolder;
 	padding: 15px 10px 15px 1.5em;
@@ -57,7 +65,7 @@ app.get('/:blobName', async (req, res) => {
 	max-width: 460px;
 	color: #D8000C;
 	background-color: #FFBABA;
-	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob content: </div><div><pre style="background: #f4f4f4;
+	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob --> ${blobName}: </div><div><pre style="background: #f4f4f4;
     border: 1px solid #ddd;
     border-left: 3px solid #f36d33;
     color: #666;
