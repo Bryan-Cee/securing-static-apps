@@ -1,0 +1,4 @@
+{
+  "appService.defaultWebAppToDeploy": "/subscriptions/d5f12a2e-a4b4-4b83-995a-8ab265ee3ea7/resourceGroups/securing-static-sites/providers/Microsoft.Web/sites/securinglinks",
+  "appService.deploySubpath": "."
+}
