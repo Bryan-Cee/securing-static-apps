@@ -5,8 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const DefaultAzureCredential =
   require('@azure/identity').DefaultAzureCredential;
-var indexRouter = require('./routes/index');
-const blobRoutes = require('./routes/blob');
+const indexRouter = require('./routes');
 
 var app = express();
 
@@ -28,12 +27,10 @@ app.use(async (req, res, next) => {
   );
 
   req.headers.authorization = `Bearer ${token.token}`;
-  console.log({ auth: req.headers.authorization });
   next();
 });
 
-app.use('/', indexRouter);
-app.use('/blobs', blobRoutes);
+app.use('/blobs', indexRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

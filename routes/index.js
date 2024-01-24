@@ -1,85 +1,44 @@
-var express = require('express');
-var BlobServiceClient = require('@azure/storage-blob').BlobServiceClient;
-var StorageSharedKeyCredential =
-  require('@azure/storage-blob').StorageSharedKeyCredential;
-const DefaultAzureCredential =
-  require('@azure/identity').DefaultAzureCredential;
-var router = express.Router();
+// routes/blobRoutes.js
+const express = require('express');
+const router = express.Router();
+const { BlobServiceClient } = require('@azure/storage-blob');
 
-require('dotenv').config({ path: '.env' });
-
-/* GET home page. */
-router.get('/', function (req, res, next) {
-  res.render('index', { title: 'Express' });
-});
-
-router.get('/store/:blobName', async (req, res) => {
-  const blobName = req.params.blobName;
-  console.log(blobName);
-
-  // Replace these values with your storage account and private endpoint details
-  const accountName = process.env.STORAGE_ACCOUNT_NAME;
-  const accountKey = process.env.STORAGE_ACCOUNT_KEY;
-  const containerName = process.env.CONTAINER_NAME;
-  const privateEndpointIP = process.env.PRIVATE_ENDPOINT_IP;
-
-  // const sharedKeyCredential = new StorageSharedKeyCredential(
-  //   accountName,
-  //   accountKey
-  // );
-
-  // const blobServiceClient = new BlobServiceClient(
-  //   `https://securinglinks.privatelink.azurewebsites.net.`,
-  //   sharedKeyCredential
-  // );
-
-  console.log(blobServiceClient);
-  // Function to get blob content
-  async function getBlobContent(blobName) {
-    const containerClient = BlobServiceClient.fromConnectionString(
-      process.env.AZURE_STORAGE_CONNECTION_STRING
-    ).getContainerClient(containerName);
-    const blobClient = containerClient.getBlobClient(blobName);
-
-    const response = await blobClient.download();
-    return await streamToBuffer(response.readableStreamBody);
-  }
-
-  // Function to convert stream to buffer
-  async function streamToBuffer(readableStream) {
-    return new Promise((resolve, reject) => {
-      const chunks = [];
-      readableStream.on('data', (data) => {
-        chunks.push(data instanceof Buffer ? data : Buffer.from(data));
-      });
-      readableStream.on('end', () => {
-        resolve(Buffer.concat(chunks));
-      });
-      readableStream.on('error', reject);
+async function streamToBuffer(readableStream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readableStream.on('data', (data) => {
+      chunks.push(data instanceof Buffer ? data : Buffer.from(data));
     });
-  }
+    readableStream.on('end', () => {
+      resolve(Buffer.concat(chunks));
+    });
+    readableStream.on('error', reject);
+  });
+}
+
+router.get('/:path(*)', async (req, res) => {
+  const blobPath = req.params.path || '';
 
   try {
-    const content = await getBlobContent(blobName);
-    res.send(`<div style="border: 1px solid; font-weight: bolder;
-	padding: 15px 10px 15px 1.5em;
-	background-repeat: no-repeat;
-	background-position: 10px center;
-	max-width: 460px;
-	color: #D8000C;
-	background-color: #FFBABA;
-	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob ${blobName}: </div>\n
-  ${content.toString()}`);
+    const containerName = process.env.CONTAINER_NAME;
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    const containerClient =
+      BlobServiceClient.fromConnectionString(
+        connectionString
+      ).getContainerClient(containerName);
+    const blobClient = containerClient.getBlockBlobClient(blobPath);
+    const blobStream = await blobClient.download();
+    const content = await streamToBuffer(blobStream.readableStreamBody);
+
+    res.send(content.toString());
   } catch (error) {
-    res.status(500).send(
+    res.status(404).send(
       `<div style="border: 1px solid; font-weight: bolder;
 	padding: 15px 10px 15px 1.5em;
 	background-repeat: no-repeat;
 	background-position: 10px center;
 	max-width: 460px;
-	color: #D8000C;
-	background-color: #FFBABA;
-	background-image: url('https://i.imgur.com/GnyDvKN.png');">Error fetching blob: ${blobName}</div><div><pre style="background: #f4f4f4;
+	color: #D8000C;">Error fetching blob: ${blobPath}</div><div><pre style="background: #f4f4f4;
     border: 1px solid #ddd;
     border-left: 3px solid #f36d33;
     color: #666;
