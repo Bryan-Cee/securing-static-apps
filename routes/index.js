@@ -23,20 +23,22 @@ router.get('/store/:blobName', async (req, res) => {
   const containerName = process.env.CONTAINER_NAME;
   const privateEndpointIP = process.env.PRIVATE_ENDPOINT_IP;
 
-  const sharedKeyCredential = new StorageSharedKeyCredential(
-    accountName,
-    accountKey
-  );
+  // const sharedKeyCredential = new StorageSharedKeyCredential(
+  //   accountName,
+  //   accountKey
+  // );
 
-  const blobServiceClient = new BlobServiceClient(
-    `https://securinglinks.privatelink.azurewebsites.net.`,
-    sharedKeyCredential
-  );
+  // const blobServiceClient = new BlobServiceClient(
+  //   `https://securinglinks.privatelink.azurewebsites.net.`,
+  //   sharedKeyCredential
+  // );
 
   console.log(blobServiceClient);
   // Function to get blob content
   async function getBlobContent(blobName) {
-    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const containerClient = BlobServiceClient.fromConnectionString(
+      process.env.AZURE_STORAGE_CONNECTION_STRING
+    ).getContainerClient(containerName);
     const blobClient = containerClient.getBlobClient(blobName);
 
     const response = await blobClient.download();

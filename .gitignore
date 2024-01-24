@@ -37,7 +37,8 @@ bower_components
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
-
+add-ip.sh
+ip_addresses.txt
 # Dependency directories
 node_modules/
 jspm_packages/
