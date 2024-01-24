@@ -22,13 +22,14 @@ router.get('/store/:blobName', async (req, res) => {
   const accountKey = process.env.STORAGE_ACCOUNT_KEY;
   const containerName = process.env.CONTAINER_NAME;
   const privateEndpointIP = process.env.PRIVATE_ENDPOINT_IP;
+
   const sharedKeyCredential = new StorageSharedKeyCredential(
     accountName,
     accountKey
   );
 
   const blobServiceClient = new BlobServiceClient(
-    `https://${accountName}.blob.core.windows.net`,
+    `https://securinglinks.privatelink.azurewebsites.net.`,
     sharedKeyCredential
   );
 

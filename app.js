@@ -3,8 +3,10 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
+const DefaultAzureCredential =
+  require('@azure/identity').DefaultAzureCredential;
 var indexRouter = require('./routes/index');
+const blobRoutes = require('./routes/blob');
 
 var app = express();
 
@@ -18,7 +20,20 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Authentication middleware
+app.use(async (req, res, next) => {
+  const tokenCredential = new DefaultAzureCredential();
+  const token = await tokenCredential.getToken(
+    'https://storage.azure.com/.default'
+  );
+
+  req.headers.authorization = `Bearer ${token.token}`;
+  console.log({ auth: req.headers.authorization });
+  next();
+});
+
 app.use('/', indexRouter);
+app.use('/blobs', blobRoutes);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
