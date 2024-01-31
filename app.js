@@ -18,17 +18,6 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
-app.use(
-  session({
-    secret: process.env.EXPRESS_SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: false, // set this to true on production
-    },
-  })
-);
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -48,13 +37,7 @@ app.use(async (req, res, next) => {
 
 app.use(ignoreFavicon);
 app.use('/blobs', indexRouter);
-// app.use(
-//   '/',
-//   createProxyMiddleware({
-//     target: API_SERVICE_URL,
-//     changeOrigin: true,
-//   })
-// );
+
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
   next(createError(404));
@@ -74,6 +57,7 @@ app.use(function (err, req, res, next) {
 function ignoreFavicon(req, res, next) {
   if (req.originalUrl.includes('favicon.ico')) {
     res.status(204).end();
+    return;
   }
   next();
 }

@@ -3,6 +3,26 @@ const express = require('express');
 const router = express.Router();
 const { BlobServiceClient } = require('@azure/storage-blob');
 
+const containerName = process.env.CONTAINER_NAME;
+const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+const containerClient =
+  BlobServiceClient.fromConnectionString(connectionString).getContainerClient(
+    containerName
+  );
+
+async function getBlobContent(blobName) {
+  const blobClient = containerClient.getBlobClient(
+    decodeURIComponent(blobName)
+  );
+
+  const response = await blobClient.download();
+  const contentType = response.contentType;
+  return {
+    content: await streamToBuffer(response.readableStreamBody),
+    contentType,
+  };
+}
+
 async function streamToBuffer(readableStream) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -20,19 +40,8 @@ router.get('/:path(*)', async (req, res) => {
   const blobPath = req.params.path || '';
 
   try {
-    const containerName = process.env.CONTAINER_NAME;
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-    const containerClient =
-      BlobServiceClient.fromConnectionString(
-        connectionString
-      ).getContainerClient(containerName);
-
-    const blobClient = containerClient.getBlockBlobClient(blobPath);
-
-    const blobStream = await blobClient.download();
-    const content = await streamToBuffer(blobStream.readableStreamBody);
-
-    res.send(content.toString());
+    const { content, contentType } = await getBlobContent(blobPath);
+    res.type(contentType).send(content);
   } catch (error) {
     res.status(404).send(
       `<div style="border: 1px solid; font-weight: bolder;
