@@ -26,7 +26,9 @@ router.get('/:path(*)', async (req, res) => {
       BlobServiceClient.fromConnectionString(
         connectionString
       ).getContainerClient(containerName);
+
     const blobClient = containerClient.getBlockBlobClient(blobPath);
+
     const blobStream = await blobClient.download();
     const content = await streamToBuffer(blobStream.readableStreamBody);
 
